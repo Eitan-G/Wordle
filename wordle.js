@@ -73,7 +73,7 @@ class Wordle {
 
     initialize(length) {
         // Stores unknown letters as empty strings
-        this.solution = new Array(length).fill('')
+        this.solution = new Array(length).fill('.')
         this.validWords = wordsWithLength(length)
         // Map of letters we know are in the word. Letter -> Set(incorrect indexes)
         this.incorrectSpots = {}
@@ -82,6 +82,10 @@ class Wordle {
 
     // Getter function for words will be useful once Trie is implemented since data has to be retrieved.
     get words() { return this.validWords }
+
+    matchesSolution(word) {
+        return new RegExp(this.solution.join('')).test(word)
+    }
 
     // O(word length)
     validateGuess(guess, clues) {
@@ -101,7 +105,7 @@ class Wordle {
         the relevant information in memory.
         Clues are 1 for 'correct spot', 0 for 'incorrect spot', and -1 for 'not in word.
         Example: The correct word is RATING. 'retina' is [1, -1, 1, 1, 1, 0]),
-        Result: this.solution: ['r', '', 't', 'i', 'n', '']
+        Result: this.solution: ['r', '.', 't', 'i', 'n', '.']
                 this.incorrectSpots: { a: Set(1)}
                 this.missingLetters: Set('e')
     O(word length) */
@@ -125,8 +129,12 @@ class Wordle {
         this.updateWords()
     }
 
+    // 1) Remove words that contain missing letters
+    // 2) Remove words that do not match this.solution
+    // 3) Remove words that do not contain letters that we know are in the word, but not where
     updateWords() {
         const newWords = this.words.filter((word) => {
+            if (!matchesSolution(word)) { return false } // O(word length)
             const wordSet = new Set(word)
             for (let letter of this.missingLetters) {
                 if (wordSet.has(letter)) { return false }
@@ -137,7 +145,6 @@ class Wordle {
             for (let idx in word) {
                 const letter = word[idx]
                 const knownLetter = this.solution[idx]
-                if (knownLetter !== '' && knownLetter !== letter) { return false }
                 if (this.incorrectSpots[letter]?.has(Number(idx))) { return false }
             }
             return true
@@ -146,5 +153,6 @@ class Wordle {
     }
 }
 
-let foo = new Wordle(11)
-foo.validWords
+let foo = new Wordle(12)
+foo.guess('anagrammatic', ['Y','B','Y','Y','Y','Y','B','B','Y','Y','B','B'])
+foo.guess('outrageously', ['Y','B','Y','Y','Y','G','Y','Y','B','B','B','B'])
