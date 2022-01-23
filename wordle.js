@@ -144,15 +144,16 @@ class Wordle {
         this.updateWords()
     }
 
-    // 1) Remove words that contain missing letters
-    // 2) Remove words that do not match this.solution
-    // 3) Remove words that do not contain letters that we know are in the word, but not where
+    // 1) Remove words that do not match solution
+    // 2) Remove words that contain letters that are not in solution
+    // 3) Remove words that have letters in the wrong spot
+    // 4) Remove words that do not contain letters that we know are somewhere in the word
     updateWords() {
         const newWords = this.words.filter((word) => {
             if (!this.matchesSolution(word)) { return false } // O(word length)
             if (this.hasMissingLetters(word)) { return false } // O(word length)
             if (this.hasLettersInIncorrectSpots(word)) { return false } // O(word length)
-            if (this.isMissingKnownLetters(word)) { return false } // O(missing letter)
+            if (this.isMissingKnownLetters(word)) { return false } // O(missing letter count)
             return true
         })
         this.validWords = newWords
