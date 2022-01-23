@@ -1,7 +1,5 @@
 let fs = require('fs');
 
-// TRIE: A more storage performant structure for storing the dictionary in memory.
-// Not currently using it.
 const TrieNode = function(value) {
     this.value = value
     this.children = {}
@@ -18,7 +16,7 @@ const TrieNode = function(value) {
     }
     this.destroy = () => {
         let node = this
-        while (node.parent.value && !node.parent.isEnd && node.parent.childCount() === 1) {
+        while (node.parent.value && !node.parent.isEnd && node.parent.children.length === 1) {
             node = node.parent
         }
         delete node.parent.children[node.value]
@@ -41,15 +39,26 @@ const Trie = function() {
 	this.insertMany = (words) => {
 		words.forEach(word => this.insert(word))
 	}
-    this.getWords = (node, result=[]) => {
+    this.getWords = (node=this.root, result=[]) => {
         if (node.isEnd) result.push(node.getWord())
         for (let letter in node.children) {
             this.getWords(node.children[letter], result)
         }
         return result
     }
+
+    this.removeWords = (cbs, node = this.root, depth = -1, word=[]) => {
+        depth++
+        for (let child of Object.values(node.children)) {
+            if (cbs.some(cb => cb(child, depth)) === true) {
+                child.destroy()
+                continue
+            }
+            this.removeWords(cbs, child, depth)
+            word.pop()
+        }
+    }
 }
-// END TRIE
 
 const DICTIONARY_PATH = '/Users/eitan/code/Wordle/enable.txt'
 const CORRECT_SPOT = 'G'
@@ -61,10 +70,25 @@ const NOT_AN_ARRAY = 'Clues must be an array. Please try again.'
 const ARRAY_WRONG_LENGTH = 'Clues array is not the same length as the puzzle. Please try again.'
 const INVALID_CLUES = 'Clues must be an array of valid clues (1, 0, or -1). Please try again.'
 
-// Shoves each line that has length n into an array and returns it.
 // Loads the entire file into memory. Yes, I know this is bad.
-// Will update to stream the file, and use a trie for storage.
-const wordsWithLength = (length) => fs.readFileSync(DICTIONARY_PATH, 'utf-8').split(/\r?\n/).filter(line => line.length === length)
+// Will update to stream the file
+const wordsWithLength = (length) => {
+    const file = fs.readFileSync(DICTIONARY_PATH, 'utf-8')
+    const trie = new Trie()
+    let word = ''
+    for (let char of file) {
+        if (char === '\r') { continue }
+        if (char === '\n') {
+            word.length === length && trie.insert(word)
+            word = ''
+        } else {
+            word += char
+        }
+    }
+    // Adds the last word of the dictionary since it has no following whitespace
+    trie.insert(word)
+    return trie
+}
 
 class Wordle {
     constructor(length) {
@@ -72,37 +96,36 @@ class Wordle {
     }
 
     initialize(length) {
-        // Stores unknown letters as empty strings
-        this.solution = new Array(length).fill('.')
-        this.validWords = wordsWithLength(length)
+        this.solution = new Array(length).fill('')
+        this.trie = wordsWithLength(length)
         // Map of letters we know are in the word. Letter -> Set(incorrect indexes)
         this.incorrectSpots = {}
         this.missingLetters = new Set()
     }
 
-    // Getter function for words will be useful once Trie is implemented since data has to be retrieved.
-    get words() { return this.validWords }
+    get words() { return this.trie.getWords() }
 
-    matchesSolution(word) {
-        return new RegExp(this.solution.join('')).test(word)
+    doesNotMatchSolution(node, idx) {
+        return this.solution[idx] !== '' && this.solution[idx] !== node.value
     }
 
-    hasMissingLetters(word) {
-        return [...word].some(letter => this.missingLetters.has(letter))
+    isNotInSolution(node) {
+        return this.missingLetters.has(node.value) || false
     }
 
-    hasLettersInIncorrectSpots(word) {
-        return [...word].some((letter, idx) => this.incorrectSpots[letter]?.has(idx))
+    isInIncorrectSpot(node, idx) {
+        return this.incorrectSpots[node.value]?.has(idx) || false
     }
 
-    isMissingKnownLetters(word) {
-        const wordSet = new Set(word)
+    isMissingKnownLetters(node) {
+        if (!node.isEnd) { return false }
+        const wordSet = new Set(node.getWord())
         for (let letter of Object.keys(this.incorrectSpots)) {
-            if (!wordSet.has(letter)) { return false }
+            if (!wordSet.has(letter)) { return true }
         }
+        return false
     }
 
-    // O(word length)
     validateGuess(guess, clues) {
         if (typeof guess !== 'string') { throw NOT_A_STRING }
         // Is the input a lower case letter, repeated n times
@@ -116,14 +139,6 @@ class Wordle {
         })) { throw INVALID_CLUES }
     }
 
-    /*  Takes a word and an array that represents the clues for the word, and stores
-        the relevant information in memory.
-        Clues are 1 for 'correct spot', 0 for 'incorrect spot', and -1 for 'not in word.
-        Example: The correct word is RATING. 'retina' is [1, -1, 1, 1, 1, 0]),
-        Result: this.solution: ['r', '.', 't', 'i', 'n', '.']
-                this.incorrectSpots: { a: Set(1)}
-                this.missingLetters: Set('e')
-    O(word length) */
     guess(word, clues) {
         this.validateGuess(word, clues)
         clues.forEach((clue, idx) => {
@@ -142,6 +157,7 @@ class Wordle {
             }
         })
         this.updateWords()
+        console.log(this.words)
     }
 
     // 1) Remove words that do not match solution
@@ -149,18 +165,13 @@ class Wordle {
     // 3) Remove words that have letters in the wrong spot
     // 4) Remove words that do not contain letters that we know are somewhere in the word
     updateWords() {
-        const newWords = this.words.filter((word) => {
-            if (!this.matchesSolution(word)) { return false } // O(word length)
-            if (this.hasMissingLetters(word)) { return false } // O(word length)
-            if (this.hasLettersInIncorrectSpots(word)) { return false } // O(word length)
-            if (this.isMissingKnownLetters(word)) { return false } // O(missing letter count)
-            return true
-        })
-        this.validWords = newWords
+        this.trie.removeWords([
+            this.doesNotMatchSolution.bind(this),
+            this.isNotInSolution.bind(this),
+            this.isInIncorrectSpot.bind(this),
+            this.isMissingKnownLetters.bind(this),
+        ])
     }
 }
 
-let foo = new Wordle(12)
-foo.guess('anagrammatic', ['Y','B','Y','Y','Y','Y','B','B','Y','Y','B','B'])
-foo.guess('outrageously', ['Y','B','Y','Y','Y','G','Y','Y','B','B','B','B'])
-foo.guess('pzzzzzzzzzzz', ['G','B','B','B','B','B','B','B','B','B','B','B'])
+let foo = new Wordle(5)
