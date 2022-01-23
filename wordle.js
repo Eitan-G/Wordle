@@ -1,4 +1,4 @@
-let fs = require('fs');
+const fs = require('fs');
 
 const TrieNode = function(value) {
     this.value = value
@@ -16,7 +16,7 @@ const TrieNode = function(value) {
     }
     this.destroy = () => {
         let node = this
-        while (node.parent.value && !node.parent.isEnd && node.parent.children.length === 1) {
+        while (node.parent.value && !node.parent.isEnd && Object.keys(node.parent.children.length) === 1) {
             node = node.parent
         }
         delete node.parent.children[node.value]
@@ -60,7 +60,7 @@ const Trie = function() {
     }
 }
 
-const DICTIONARY_PATH = '/Users/eitan/code/Wordle/enable.txt'
+const DICTIONARY_PATH = '/Users/eitan/Documents/enable.txt'
 const CORRECT_SPOT = 'G'
 const INCORRECT_SPOT = 'Y'
 const NOT_IN_WORD = 'B'
@@ -90,7 +90,7 @@ const wordsWithLength = (length) => {
     return trie
 }
 
-class Wordle {
+class WordleHelper {
     constructor(length) {
         this.initialize(length)
     }
@@ -173,4 +173,4 @@ class Wordle {
     }
 }
 
-let foo = new Wordle(5)
+module.exports = WordleHelper
