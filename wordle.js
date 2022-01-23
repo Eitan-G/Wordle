@@ -51,7 +51,7 @@ const Trie = function() {
 }
 // END TRIE
 
-const DICTIONARY_PATH = '/Users/eitan/Documents/discordle-corpus.txt'
+const DICTIONARY_PATH = '/Users/eitan/code/Wordle/enable.txt'
 const CORRECT_SPOT = 'G'
 const INCORRECT_SPOT = 'Y'
 const NOT_IN_WORD = 'B'
@@ -63,6 +63,7 @@ const INVALID_CLUES = 'Clues must be an array of valid clues (1, 0, or -1). Plea
 
 // Shoves each line that has length n into an array and returns it.
 // Loads the entire file into memory. Yes, I know this is bad.
+// Will update to stream the file, and use a trie for storage.
 const wordsWithLength = (length) => fs.readFileSync(DICTIONARY_PATH, 'utf-8').split(/\r?\n/).filter(line => line.length === length)
 
 class Wordle {
@@ -73,18 +74,15 @@ class Wordle {
     initialize(length) {
         // Stores unknown letters as empty strings
         this.solution = new Array(length).fill('')
-        this.validWords = wordsWithLength(length) // new Trie().insertMany(wordsWithLength(length))
-        // Map of letters we know are in the word.
-        // Letter -> Set(incorrect indexes)
+        this.validWords = wordsWithLength(length)
+        // Map of letters we know are in the word. Letter -> Set(incorrect indexes)
         this.incorrectSpots = {}
-        // Set of the letters that are not in the word
         this.missingLetters = new Set()
     }
 
     // Getter function for words will be useful once Trie is implemented since data has to be retrieved.
     get words() { return this.validWords }
 
-    // Validate user input
     // O(word length)
     validateGuess(guess, clues) {
         if (typeof guess !== 'string') { throw NOT_A_STRING }
@@ -106,7 +104,7 @@ class Wordle {
         Result: this.solution: ['r', '', 't', 'i', 'n', '']
                 this.incorrectSpots: { a: Set(1)}
                 this.missingLetters: Set('e')
-        O(word length) */
+    O(word length) */
     guess(word, clues) {
         this.validateGuess(word, clues)
         clues.forEach((clue, idx) => {
@@ -130,8 +128,6 @@ class Wordle {
     updateWords() {
         const newWords = this.words.filter((word) => {
             const wordSet = new Set(word)
-            // The keyword 'of' iterates through keys
-            // The keyword 'in' iterates through values
             for (let letter of this.missingLetters) {
                 if (wordSet.has(letter)) { return false }
             }
@@ -141,7 +137,7 @@ class Wordle {
             for (let idx in word) {
                 const letter = word[idx]
                 const knownLetter = this.solution[idx]
-                if (knownLetter !== '' && knownLetter !== letter) { return false } // Will be false for empty strings
+                if (knownLetter !== '' && knownLetter !== letter) { return false }
                 if (this.incorrectSpots[letter]?.has(Number(idx))) { return false }
             }
             return true
@@ -151,5 +147,4 @@ class Wordle {
 }
 
 let foo = new Wordle(11)
-foo.guess('ascertained', ['Y','Y','B','Y','Y','Y','Y','Y','Y','Y','Y'])
 foo.validWords
