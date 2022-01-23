@@ -87,6 +87,14 @@ class Wordle {
         return new RegExp(this.solution.join('')).test(word)
     }
 
+    hasMissingLetters(word) {
+        return [...word].some(letter => this.missingLetters.has(letter))
+    }
+
+    hasLettersInIncorrectSpots(word) {
+        return [...word].some((letter, idx) => this.incorrectSpots[letter]?.has(idx))
+    }
+
     // O(word length)
     validateGuess(guess, clues) {
         if (typeof guess !== 'string') { throw NOT_A_STRING }
@@ -134,14 +142,10 @@ class Wordle {
     // 3) Remove words that do not contain letters that we know are in the word, but not where
     updateWords() {
         const newWords = this.words.filter((word) => {
-            if (!matchesSolution(word)) { return false } // O(word length)
+            if (!this.matchesSolution(word)) { return false } // O(word length)
+            if (this.hasMissingLetters(word)) { return false } // O(word length)
+            if (this.hasLettersInIncorrectSpots(word)) { return false } // O(word length)
             const wordSet = new Set(word)
-            for (let letter of this.missingLetters) {
-                if (wordSet.has(letter)) { return false }
-            }
-            for (let letter of Object.keys(this.incorrectSpots)) {
-                if (!wordSet.has(letter)) { return false }
-            }
             for (let idx in word) {
                 const letter = word[idx]
                 const knownLetter = this.solution[idx]
@@ -156,3 +160,4 @@ class Wordle {
 let foo = new Wordle(12)
 foo.guess('anagrammatic', ['Y','B','Y','Y','Y','Y','B','B','Y','Y','B','B'])
 foo.guess('outrageously', ['Y','B','Y','Y','Y','G','Y','Y','B','B','B','B'])
+foo.guess('pzzzzzzzzzzz', ['G','B','B','B','B','B','B','B','B','B','B','B'])
