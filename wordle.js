@@ -71,7 +71,7 @@ const ARRAY_WRONG_LENGTH = 'Clues array is not the same length as the puzzle. Pl
 const INVALID_CLUES = 'Clues must be an array of valid clues (1, 0, or -1). Please try again.'
 
 // Loads the entire file into memory. Yes, I know this is bad.
-// Will update to stream the file
+// Will update to stream the file.
 const wordsWithLength = (length) => {
     const file = fs.readFileSync(DICTIONARY_PATH, 'utf-8')
     const trie = new Trie()
@@ -128,7 +128,6 @@ class Wordle {
 
     validateGuess(guess, clues) {
         if (typeof guess !== 'string') { throw NOT_A_STRING }
-        // Is the input a lower case letter, repeated n times
         if (new RegExp(`^[a-z]{${this.solution.length}}$`).test(guess) === false) { throw INVALID_STRING }
         if (!Array.isArray(clues)) { throw NOT_AN_ARRAY }
         if (clues.length !== this.solution.length) { throw ARRAY_WRONG_LENGTH }
@@ -160,7 +159,7 @@ class Wordle {
         console.log(this.words)
     }
 
-    // 1) Remove words that do not match solution
+    // 1) Remove words that do not match solution's known spots
     // 2) Remove words that contain letters that are not in solution
     // 3) Remove words that have letters in the wrong spot
     // 4) Remove words that do not contain letters that we know are somewhere in the word
