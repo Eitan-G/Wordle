@@ -95,6 +95,13 @@ class Wordle {
         return [...word].some((letter, idx) => this.incorrectSpots[letter]?.has(idx))
     }
 
+    isMissingKnownLetters(word) {
+        const wordSet = new Set(word)
+        for (let letter of Object.keys(this.incorrectSpots)) {
+            if (!wordSet.has(letter)) { return false }
+        }
+    }
+
     // O(word length)
     validateGuess(guess, clues) {
         if (typeof guess !== 'string') { throw NOT_A_STRING }
@@ -145,12 +152,7 @@ class Wordle {
             if (!this.matchesSolution(word)) { return false } // O(word length)
             if (this.hasMissingLetters(word)) { return false } // O(word length)
             if (this.hasLettersInIncorrectSpots(word)) { return false } // O(word length)
-            const wordSet = new Set(word)
-            for (let idx in word) {
-                const letter = word[idx]
-                const knownLetter = this.solution[idx]
-                if (this.incorrectSpots[letter]?.has(Number(idx))) { return false }
-            }
+            if (this.isMissingKnownLetters(word)) { return false } // O(missing letter)
             return true
         })
         this.validWords = newWords
