@@ -57,6 +57,9 @@ class WordleHelper {
     }
 
     get words() { return this.trie.getWords() }
+    get wordsByUniques() {
+        return this.words.sort((a, b) => new Set(a).size > new Set(b).size ? -1 : 1)
+    }
 
     doesNotMatchSolution(node, idx) {
         return this.solution[idx] !== '' && this.solution[idx] !== node.value
