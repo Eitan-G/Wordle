@@ -13,7 +13,7 @@ Trie.removeWords = (cbs, node = this.root, depth = -1, word=[]) => {
     }
 }
 
-const DICTIONARY_PATH = '/Users/eitan/code/Wordle/dictionary.txt'
+const DICTIONARY_PATH = '../dictionary.txt'
 const CORRECT_SPOT = 'G'
 const INCORRECT_SPOT = 'Y'
 const NOT_IN_WORD = 'B'
