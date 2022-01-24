@@ -13,15 +13,15 @@ Steps to use. Using node:
 
 ## 3. Guess.
 
-      Use the `guess` method to input your clues. Pass the guess as the first argument, and an array of clues as the second.
-      Clues are G for letters in the correct spot, Y forletters in the incorrect spot, and B for letters that aren't in the solution.
-      Assume the word is LAUGH
+Use the `guess` method to input your clues. Pass the guess as the first argument, and an array of clues as the second.
+Clues are G for letters in the correct spot, Y forletters in the incorrect spot, and B for letters that aren't in the solution.
+Assume the word is LAUGH
 
 `word.guess('llama', ['G','Y','Y','B','Y'])`
 
 This will update the internal dictionary to only include words that meet the criteria, and will log the list of words to the console.
 
-Run
+## 4. Optional
 
 `word.initialize(n)`
 
