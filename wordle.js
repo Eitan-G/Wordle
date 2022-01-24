@@ -1,5 +1,5 @@
 const fs = require('fs');
-const Trie = require('/Users/eitan/code/Wordle/trie.js')
+const Trie = require('../trie.js')
 
 Trie.removeWords = (cbs, node = this.root, depth = -1, word=[]) => {
     depth++
